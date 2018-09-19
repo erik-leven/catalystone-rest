@@ -28,12 +28,15 @@ def get_token(path):
             "client_secret":os.environ.get('client_secret_user'),
             "grant_type":os.environ.get('grant_type')
         }
-    if path == "organisation":
+    if path == "organization":
         headers = {
             "client_id":os.environ.get('client_id_org'),
             "client_secret":os.environ.get('client_secret_org'),
             "grant_type":os.environ.get('grant_type')
         }
+    else:
+        logger.info("undefined method")
+        sys.exit()
     resp = requests.get(url=os.environ.get('token_url'), headers=headers).json()
     token = dotdictify.dotdictify(resp).response.responseMessage.access_token
     logger.info("Received access token from " + os.environ.get('token_url'))
@@ -43,11 +46,11 @@ class DataAccess:
 
 #main get function, will probably run most via path:path
     def __get_all_entities(self, path):
-        logger.info("Fetching data from paged url: %s", path)
+        logger.info("Fetching data from url: %s", path)
         token = get_token(path)
         headers= {'Accept': 'application/json',
                   'content_type': 'application/json'}
-        url = path + "?access_token=" + token
+        url = os.environ.get('get_url') + "?access_token=" + token
         logger.info("Fetching data from url: %s", path)
         req = requests.get(url, headers=headers)
 
@@ -55,10 +58,15 @@ class DataAccess:
             logger.error("Unexpected response status code: %d with response text %s" % (req.status_code, req.text))
             raise AssertionError ("Unexpected response status code: %d with response text %s"%(req.status_code, req.text))
         res = dotdictify.dotdictify(json.loads(req.text))
-        for entity in res.get(os.environ.get("entities_path")):
+        if path == "user":
+            for entity in res.get(os.environ.get("entities_path_user")):
 
-            yield(entity)
-
+                yield(entity)
+        if path == "organization":
+            for entity in res.get(os.environ.get("entities_path_org")):
+                yield (entity)
+        else:
+            logger.info("method not recognized")
         logger.info('Returning entities from %s', path)
 
     def get_entities(self,path):
@@ -79,32 +87,32 @@ def stream_json(clean):
         yield json.dumps(row)
     yield ']'
 
-@app.route("/user", methods=["GET"])
-def get_user():
-    path = os.environ.get("user_url")
-    entities = data_access_layer.get_entities(path)
-    return Response(
-        stream_json(entities),
-        mimetype='application/json'
-    )
+# @app.route("/user", methods=["GET"])
+# def get_user():
+#     path = os.environ.get("user_url")
+#     entities = data_access_layer.get_entities(path)
+#     return Response(
+#         stream_json(entities),
+#         mimetype='application/json'
+#     )
+#
+# @app.route("/organisation", methods=["GET"])
+# def get_organisation():
+#     path = os.environ.get("org_url")
+#     entities = data_access_layer.get_entities(path)
+#     return Response(
+#         stream_json(entities),
+#         mimetype='application/json'
+#     )
 
-@app.route("/organisation", methods=["GET"])
-def get_organisation():
-    path = os.environ.get("org_url")
-    entities = data_access_layer.get_all_entities(path)
-    return Response(
-        stream_json(entities),
-        mimetype='application/json'
-    )
-
-@app.route("/path:path", methods=["GET", "POST"])
+@app.route("/<path:path>", methods=["GET", "POST"])
 def get_path(path):
     if request.method == "POST":
         path = request.get_json()
     if request.method == "GET":
         path = path
 
-    entities = data_access_layer.get_all_entities(path)
+    entities = data_access_layer.get_entities(path)
     return Response(
         stream_json(entities),
         mimetype='application/json'
