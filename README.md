@@ -27,7 +27,3 @@ A microservice to connect to catalystones rest interface
 }
 
 ```
-
-If use_header is set to false you will need to supply data_payload config.
-
-The user and password config will then be redundant.
