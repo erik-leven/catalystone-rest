@@ -87,24 +87,6 @@ def stream_json(clean):
         yield json.dumps(row)
     yield ']'
 
-# @app.route("/user", methods=["GET"])
-# def get_user():
-#     path = os.environ.get("user_url")
-#     entities = data_access_layer.get_entities(path)
-#     return Response(
-#         stream_json(entities),
-#         mimetype='application/json'
-#     )
-#
-# @app.route("/organisation", methods=["GET"])
-# def get_organisation():
-#     path = os.environ.get("org_url")
-#     entities = data_access_layer.get_entities(path)
-#     return Response(
-#         stream_json(entities),
-#         mimetype='application/json'
-#     )
-
 @app.route("/<path:path>", methods=["GET", "POST"])
 def get_path(path):
     if request.method == "POST":
