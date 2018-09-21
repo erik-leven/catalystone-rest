@@ -4,7 +4,6 @@ import requests
 import logging
 import sys
 import json
-from time import sleep
 import dotdictify
 
 app = Flask(__name__)
@@ -44,7 +43,7 @@ def get_token(path):
 
 class DataAccess:
 
-#main get function, will probably run most via path:path
+#main get function check for path and make decisions based on that value
     def __get_all_entities(self, path):
         logger.info("Fetching data from url: %s", path)
         token = get_token(path)
@@ -75,7 +74,7 @@ class DataAccess:
 
 data_access_layer = DataAccess()
 
-
+# stream entities
 def stream_json(clean):
     first = True
     yield '['
