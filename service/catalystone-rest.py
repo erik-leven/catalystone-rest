@@ -21,21 +21,29 @@ logger.setLevel(logging.DEBUG)
 ##getting token
 def get_token(path):
     logger.info("Creating header")
+
     if path == "user":
         headers = {
             "client_id":os.environ.get('client_id_user'),
             "client_secret":os.environ.get('client_secret_user'),
             "grant_type":os.environ.get('grant_type')
         }
-    if path == "organization":
+    elif path == "organization":
         headers = {
             "client_id":os.environ.get('client_id_org'),
             "client_secret":os.environ.get('client_secret_org'),
             "grant_type":os.environ.get('grant_type')
         }
+    elif path == "post_user":
+        headers = {
+            "client_id": os.environ.get('client_id_post'),
+            "client_secret": os.environ.get('client_secret_post'),
+            "grant_type": os.environ.get('grant_type')
+        }
     else:
         logger.info("undefined method")
         sys.exit()
+
     resp = requests.get(url=os.environ.get('token_url'), headers=headers).json()
     token = dotdictify.dotdictify(resp).response.responseMessage.access_token
     logger.info("Received access token from " + os.environ.get('token_url'))
@@ -89,7 +97,39 @@ def stream_json(clean):
 @app.route("/<path:path>", methods=["GET", "POST"])
 def get_path(path):
     if request.method == "POST":
-        path = request.get_json()
+        post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
+
+        entities = request.get_json()
+        headers = json.loads(os.environ.get('post_headers').replace("'", "\""))
+
+        logger.info("Sending entities")
+        response= requests.post(post_url, data=entities, headers=headers)
+        if response.status_code is not 200:
+            logger.error("Got error code: " + str(response.status_code) + "with text: " + response.text)
+            return Response(response.text, status=response.status_code, mimetype='application/json')
+        logger.info("Prosessed " + str(len(entities)) + " entities")
+        return Response(response.text, status=response.status_code, mimetype='application/json')
+
+
+        # if not isinstance(entities, list):
+        #     entities = [entities]
+        # for entity in entities:
+        #     for k, v in entity.items():
+        #         if k == os.environ.get('post_url', 'post_url'):
+        #             url = baseurl + v
+        #     logger.info("Fetching entity with url: " + str(url))
+        #     response = requests.post(url, data=entities, headers=headers)
+        #     if response.status_code is not 200:
+        #         logger.error("Got Error Code: " + str(response.status_code) + " with text: " + response.text)
+        #         return Response(response.text, status=response.status_code, mimetype='application/json')
+        #     entity[prop] = {
+        #         "status_code": response.status_code,
+        #         "response_text": json.loads(response.text)
+        #
+        #     }
+        # logger.info("Prosessed " + str(len(entities)) + " entities")
+        # return Response(json.dumps(entities), status=response.status_code, mimetype='application/json')
+
     if request.method == "GET":
         path = path
 
