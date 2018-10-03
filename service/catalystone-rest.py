@@ -21,22 +21,21 @@ logger.setLevel(logging.DEBUG)
 ##getting token
 def get_token(path):
     headers = {}
-    test = path
     logger.info("Creating header")
 
-    if test == "user":
+    if path == "user":
         headers = {
             "client_id":os.environ.get('client_id_user'),
             "client_secret":os.environ.get('client_secret_user'),
             "grant_type":os.environ.get('grant_type')
         }
-    elif test == "organization":
+    elif path == "organization":
         headers = {
             "client_id":os.environ.get('client_id_org'),
             "client_secret":os.environ.get('client_secret_org'),
             "grant_type":os.environ.get('grant_type')
         }
-    elif test == "post_user":
+    elif path == "post_user":
         headers = {
             "client_id": os.environ.get('client_id_post'),
             "client_secret": os.environ.get('client_secret_post'),
