@@ -20,21 +20,23 @@ logger.setLevel(logging.DEBUG)
 
 ##getting token
 def get_token(path):
+    headers = {}
+    test = path
     logger.info("Creating header")
 
-    if path == "user":
+    if test == "user":
         headers = {
             "client_id":os.environ.get('client_id_user'),
             "client_secret":os.environ.get('client_secret_user'),
             "grant_type":os.environ.get('grant_type')
         }
-    elif path == "organization":
+    elif test == "organization":
         headers = {
             "client_id":os.environ.get('client_id_org'),
             "client_secret":os.environ.get('client_secret_org'),
             "grant_type":os.environ.get('grant_type')
         }
-    elif path == "post_user":
+    elif test == "post_user":
         headers = {
             "client_id": os.environ.get('client_id_post'),
             "client_secret": os.environ.get('client_secret_post'),
@@ -96,9 +98,10 @@ def stream_json(clean):
 
 @app.route("/<path:path>", methods=["GET", "POST"])
 def get_path(path):
-    if request.method == "POST":
-        post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
 
+    if request.method == 'POST':
+        post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
+        logger.info(request.get_json())
         entities = request.get_json()
         headers = json.loads(os.environ.get('post_headers').replace("'", "\""))
 
@@ -130,8 +133,11 @@ def get_path(path):
         # logger.info("Prosessed " + str(len(entities)) + " entities")
         # return Response(json.dumps(entities), status=response.status_code, mimetype='application/json')
 
-    if request.method == "GET":
+    elif request.method == "GET":
         path = path
+
+    else:
+        logger.info("undefined request method")
 
     entities = data_access_layer.get_entities(path)
     return Response(
