@@ -100,37 +100,21 @@ def get_path(path):
 
     if request.method == 'POST':
         post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
-        logger.info(request.get_json())
-        entities = request.get_json()
+        #logger.info(request.get_json())
+        entities = request.get_data()
+        #logger.info(json.dumps(json.loads(entities)))
         headers = json.loads(os.environ.get('post_headers').replace("'", "\""))
 
         logger.info("Sending entities")
-        response= requests.post(post_url, data=entities, headers=headers)
-        if response.status_code is not 200:
-            logger.error("Got error code: " + str(response.status_code) + "with text: " + response.text)
-            return Response(response.text, status=response.status_code, mimetype='application/json')
-        logger.info("Prosessed " + str(len(entities)) + " entities")
-        return Response(response.text, status=response.status_code, mimetype='application/json')
+        try:
+            return update_entities(entities, headers, post_url)
 
+        except Exception as e:
+            logger.info(e)
+            if e == "error token":
+                post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
+                return update_entities(entities, headers, post_url)
 
-        # if not isinstance(entities, list):
-        #     entities = [entities]
-        # for entity in entities:
-        #     for k, v in entity.items():
-        #         if k == os.environ.get('post_url', 'post_url'):
-        #             url = baseurl + v
-        #     logger.info("Fetching entity with url: " + str(url))
-        #     response = requests.post(url, data=entities, headers=headers)
-        #     if response.status_code is not 200:
-        #         logger.error("Got Error Code: " + str(response.status_code) + " with text: " + response.text)
-        #         return Response(response.text, status=response.status_code, mimetype='application/json')
-        #     entity[prop] = {
-        #         "status_code": response.status_code,
-        #         "response_text": json.loads(response.text)
-        #
-        #     }
-        # logger.info("Prosessed " + str(len(entities)) + " entities")
-        # return Response(json.dumps(entities), status=response.status_code, mimetype='application/json')
 
     elif request.method == "GET":
         path = path
@@ -143,6 +127,16 @@ def get_path(path):
         stream_json(entities),
         mimetype='application/json'
     )
+
+
+def update_entities(entities, headers, post_url):
+    response = requests.post(post_url, data=json.dumps(json.loads(entities)), headers=headers)
+    if response.status_code is not 200:
+        logger.error("Got error code: " + str(response.status_code) + "with text: " + response.text)
+        return Response(response.text, status=response.status_code, mimetype='application/json')
+    logger.info("Prosessed " + str(len(json.loads(entities))) + " entities")
+    return Response(response.text, status=response.status_code, mimetype='application/json')
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', threaded=True, port=os.environ.get('port',5000))
