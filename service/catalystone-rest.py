@@ -84,7 +84,7 @@ class DataAccess:
 data_access_layer = DataAccess()
 
 def update_entities(entities, headers, post_url):
-    for entity in json.loads(entities):
+    for entity in entities:
         logger.info(str(entity))
         response = requests.post(post_url, data=json.dumps(entity), headers=headers)
         if response.status_code is not 200:
@@ -112,8 +112,8 @@ def get_path(path):
     if request.method == 'POST':
         post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
         logger.info(request.get_json())
-        entities = request.get_data()
-                #logger.info(json.dumps(json.loads(entities)))
+        entities = request.get_json()
+        #logger.info(json.dumps(json.loads(entities)))
         headers = json.loads(os.environ.get('post_headers').replace("'", "\""))
 
         logger.info("Sending entities")
