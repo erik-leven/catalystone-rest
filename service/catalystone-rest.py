@@ -100,9 +100,9 @@ def get_path(path):
 
     if request.method == 'POST':
         post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
-        #logger.info(request.get_json())
+        logger.info(request.get_json())
         entities = request.get_data()
-        #logger.info(json.dumps(json.loads(entities)))
+                #logger.info(json.dumps(json.loads(entities)))
         headers = json.loads(os.environ.get('post_headers').replace("'", "\""))
 
         logger.info("Sending entities")
@@ -122,20 +122,22 @@ def get_path(path):
     else:
         logger.info("undefined request method")
 
-    entities = data_access_layer.get_entities(path)
-    return Response(
-        stream_json(entities),
-        mimetype='application/json'
-    )
+        entities = data_access_layer.get_entities(path)
+        return Response(
+            stream_json(entities),
+            mimetype='application/json'
+        )
 
 
 def update_entities(entities, headers, post_url):
-    response = requests.post(post_url, data=json.dumps(json.loads(entities)), headers=headers)
-    if response.status_code is not 200:
-        logger.error("Got error code: " + str(response.status_code) + "with text: " + response.text)
-        return Response(response.text, status=response.status_code, mimetype='application/json')
-    logger.info("Prosessed " + str(len(json.loads(entities))) + " entities")
-    return Response(response.text, status=response.status_code, mimetype='application/json')
+    for entity in json.loads(entities):
+        logger.info(str(entity))
+        response = requests.post(post_url, data=json.dumps(entity), headers=headers)
+        if response.status_code is not 200:
+            logger.error("Got error code: " + str(response.status_code) + "with text: " + response.text)
+            return Response(response.text, status=response.status_code, mimetype='application/json')
+        logger.info("Prosessed " + str(entity))
+    return Response("done", status=response.status_code, mimetype='application/json')
 
 
 if __name__ == '__main__':
