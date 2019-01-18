@@ -85,6 +85,7 @@ data_access_layer = DataAccess()
 
 def update_entities(entities, headers, post_url):
     for entity in entities:
+        entity.pop('_id', None)
         response = requests.post(post_url, data=json.dumps(entity), headers=headers)
         if response.status_code is not 200:
             if response.status_code == 403:
