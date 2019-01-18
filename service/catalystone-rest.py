@@ -59,7 +59,6 @@ class DataAccess:
         headers= {'Accept': 'application/json',
                   'content_type': 'application/json'}
         url = os.environ.get('get_url') + "?access_token=" + token
-        logger.info("Fetching data from url: %s", path)
         req = requests.get(url, headers=headers)
 
         if req.status_code != 200:
@@ -83,15 +82,18 @@ class DataAccess:
 
 data_access_layer = DataAccess()
 
+
 def update_entities(entities, headers, post_url):
     for entity in entities:
-        logger.info(str(entity))
         response = requests.post(post_url, data=json.dumps(entity), headers=headers)
         if response.status_code is not 200:
-            logger.error("Got error code: " + str(response.status_code) + "with text: " + response.text)
+            if response.status_code == 403:
+                logger.error("Unexpected response status code: %d with response text %s" % (response.status_code, response.text))
+                raise AssertionError("Unexpected response status code: %d with response text %s" % (response.status_code, response.text))
+            logger.error("Got error code: " + str(response.status_code) + " with text: " + response.text)
             return Response(response.text, status=response.status_code, mimetype='application/json')
-        logger.info("Prosessed " + str(entity))
-    return Response("done", status=response.status_code, mimetype='application/json')
+        logger.info("Processed " + entity['USERS']['USER'][0]['STANDARD_FIELDS']['UNIQUE_IMPORT_ID'])
+        return Response("done", status=response.status_code, mimetype='application/json')
 
 
 # stream entities
@@ -111,20 +113,16 @@ def get_path(path):
 
     if request.method == 'POST':
         post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
-        logger.info(request.get_json())
         entities = request.get_json()
-        #logger.info(json.dumps(json.loads(entities)))
         headers = json.loads(os.environ.get('post_headers').replace("'", "\""))
-
         logger.info("Sending entities")
         try:
             return update_entities(entities, headers, post_url)
 
         except Exception as e:
             logger.info(e)
-            if e == "error token":
-                post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
-                return update_entities(entities, headers, post_url)
+            post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
+            return update_entities(entities, headers, post_url)
 
 
     elif request.method == "GET":
