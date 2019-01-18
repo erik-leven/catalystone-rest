@@ -85,7 +85,6 @@ data_access_layer = DataAccess()
 
 def update_entities(entities, headers, post_url):
     for entity in entities:
-        logger.info('Posting ' + entity['USERS']['USER'][0]['STANDARD_FIELDS']['UNIQUE_IMPORT_ID'])
         response = requests.post(post_url, data=json.dumps(entity), headers=headers)
         if response.status_code is not 200:
             if response.status_code == 403:
@@ -93,7 +92,7 @@ def update_entities(entities, headers, post_url):
                 raise AssertionError("Unexpected response status code: %d with response text %s" % (response.status_code, response.text))
             logger.error("Got error code: " + str(response.status_code) + " with text: " + response.text)
             return Response(response.text, status=response.status_code, mimetype='application/json')
-        logger.info("Prosessed " + json.dumps(entity))
+        logger.info("Processed " + entity['USERS']['USER'][0]['STANDARD_FIELDS']['UNIQUE_IMPORT_ID'])
         return Response("done", status=response.status_code, mimetype='application/json')
 
 
