@@ -94,7 +94,7 @@ def update_entities(entities, headers, post_url):
             logger.error("Got error code: " + str(response.status_code) + " with text: " + response.text)
             return Response(response.text, status=response.status_code, mimetype='application/json')
         logger.info("Processed " + entity['USERS']['USER'][0]['STANDARD_FIELDS']['UNIQUE_IMPORT_ID'])
-        return Response("done", status=response.status_code, mimetype='application/json')
+    return Response("done")
 
 
 # stream entities
