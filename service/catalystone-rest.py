@@ -83,19 +83,40 @@ class DataAccess:
 data_access_layer = DataAccess()
 
 
-def update_entities(entities, headers, post_url):
-    for entity in entities:
-        entity.pop('_id', None)
-        response = requests.post(post_url, data=json.dumps(entity), headers=headers)
-        if response.status_code is not 200:
-            if response.status_code == 403:
-                logger.error("Unexpected response status code: %d with response text %s" % (response.status_code, response.text))
-                raise AssertionError("Unexpected response status code: %d with response text %s" % (response.status_code, response.text))
-            logger.error("Got error code: " + str(response.status_code) + " with text: " + response.text)
-            return Response(response.text, status=response.status_code, mimetype='application/json')
-        logger.info("Processed " + entity['USERS']['USER'][0]['STANDARD_FIELDS']['UNIQUE_IMPORT_ID'])
-    return Response("done")
+def update_entities(entities, headers, post_url, counter):
+    if counter == 0:
+        #for i in range (total_list):
+        for entity in entities:
 
+            entity.pop('_id', None)
+            response = requests.post(post_url, data=json.dumps(entity), headers=headers)
+            if response.status_code is not 200:
+                if response.status_code == 403:
+                    logger.info('stuff happens')
+                    logger.error("Unexpected response status code: %d with response text %s" % (response.status_code, response.text) + str(counter))
+                    raise AssertionError("Unexpected response status code: %d with response text %s" % (response.status_code, response.text) + str(counter))
+                logger.error("Got error code: " + str(response.status_code) + " with text: " + response.text + str(counter))
+                return Response(response.text, status=response.status_code, mimetype='application/json')
+            logger.info("Processed " + entity['USERS']['USER'][0]['STANDARD_FIELDS']['UNIQUE_IMPORT_ID'])
+            counter +=1
+        return json.dumps({'success':True}), 200, {'ContentType':'application/json'}
+
+    else:
+        counter = counter
+        for entity in entities[counter:]:
+        #for entity in entities and counter < total_list:
+
+            entity.pop('_id', None)
+            response = requests.post(post_url, data=json.dumps(entity), headers=headers)
+            if response.status_code is not 200:
+                if response.status_code == 403:
+                    logger.error("Unexpected response status code: %d with response text %s" % (response.status_code, response.text) + str(counter))
+                    raise AssertionError("Unexpected response status code: %d with response text %s" % (response.status_code, response.text), +str(counter))
+                logger.error("Got error code: " + str(response.status_code) + " with text: " + response.text + str(counter))
+                return Response(response.text, status=response.status_code, mimetype='application/json')
+            logger.info("Processed " + entity['USERS']['USER'][0]['STANDARD_FIELDS']['UNIQUE_IMPORT_ID'])
+            counter +=1
+        return json.dumps({'success':True}), 200, {'ContentType':'application/json'}
 
 # stream entities
 def stream_json(clean):
@@ -115,15 +136,17 @@ def get_path(path):
     if request.method == 'POST':
         post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
         entities = request.get_json()
+        counter = 0
         headers = json.loads(os.environ.get('post_headers').replace("'", "\""))
         logger.info("Sending entities")
         try:
-            return update_entities(entities, headers, post_url)
+            return update_entities(entities, headers, post_url, counter)
 
         except Exception as e:
             logger.info(e)
+            counter = int(e.args[0].split('}')[-1])
             post_url = os.environ.get('post_url') + "?access_token=" + get_token(path)
-            return update_entities(entities, headers, post_url)
+            return update_entities(entities, headers, post_url, counter)
 
 
     elif request.method == "GET":
